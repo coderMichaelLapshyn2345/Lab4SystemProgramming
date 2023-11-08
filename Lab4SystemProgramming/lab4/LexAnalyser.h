@@ -6,29 +6,29 @@ using namespace std;
 
 class LexAnalyser {
 private:
-	vector<string> terminals = {}; /*Під час зчитування граматики з файла перше, що зчитується - алфавіти, потім правила*/
+	vector<string> terminals = {}; /*When reading the grammar, the two alphabets are read, the all the inference rules*/
 	vector<string> nonterminals = {};
-	vector<string, vector<string>> rules = {}; /*Правила граматики за моїм концептом зберігаються у вигляді пар з нетермінала
-	в лівій частині та вектора лексем правої частини*/
+	vector<string, vector<string>> rules = {}; /*In my concept the rules are stored as pairs of nonterminal 
+	(left part of the rule) and vector of lexems (right part)*/
 
 	vector<string>epsilonNonTerm = {};
 	vector<string, vector<string>> firstKVec = {};
-	vector<string, vector<string>> followKVec = {}; /*ці множини зберігаються в такому самому вигляді, що й правила*/
+	vector<string, vector<string>> followKVec = {}; /*these arrays are stored in the same way as the rules*/
 	
-	//тут мають бути атрибути під таблицю
+	//there should be some attributes for the syntax table
 	
-	void ReadGrammar(string path){} //зчитування граматики
+	void ReadGrammar(string path){} //reading of the grammar
 public:
-	LexAnalyser(string path){} //конструктор приймає шлях до файлу з граматикою та викликає метод під зчитування
+	LexAnalyser(string path){} //constructor takes the path to the file containing grammar and supposedly calls the method to read it
 
 	void FirstK(){}
 	void FollowK(){}
 	
-	void Epsilons(){}//потенційно необхідна функція під знаходження епсилон-нетерміналів
+	void Epsilons(){}//potentially necessary function for locating epsilon-nonterminals
 
-	void Table(){}//побудова таблиці
+	void Table(){}//table creation
 
-	void Analysis(string input){} //аналіз введеної послідовності
+	void Analysis(string input){} //analysis of the input string
 
 
 };
