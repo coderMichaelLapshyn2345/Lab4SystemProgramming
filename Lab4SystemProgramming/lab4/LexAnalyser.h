@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <utility>
+#include <list>
 using namespace std;
 
 class LexAnalyser {
