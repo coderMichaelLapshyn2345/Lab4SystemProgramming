@@ -18,7 +18,48 @@ private:
 	vector<pair<char, vector<char>>> followKVec = {}; /*these arrays are stored in the same way as the rules*/
 	
 	//there should be some attributes for the syntax table
-	
+
+        int addNonTerminal(char symbol) { //minor function for nonterminal adding
+	        for (int nonTerminalIndex = 0; nonTerminalIndex < nonterminals.size(); nonTerminalIndex++) {
+		        if (nonterminals[nonTerminalIndex] == symbol) return 0; 
+		}
+	        return 1; 
+	}
+
+        int addTerminal(char symbol) { //minor function for terminal adding
+	        if (addNonTerminal(symbol) == 0) return 0;
+	        for (int terminalIndex = 0; terminalIndex < terminals.size(); terminalIndex++) {
+		        if (terminals[terminalIndex] == symbol)	return 0;
+		}
+	        return 1;
+	}
+
+        int getRule(FILE *input) { //adds next rule if it exists, updates "terminals", "nonterminals" and "rules"
+                /*Assuming rule has the following format: first symbol (non-terminal) - left part,
+                next symbols - right part. Rule is ended by ';'. If rule consists of first symbol
+                and ';' and only, it will be interpreted as epsilon-rule*/
+		char left_part, right_part_symbol;
+		vector<char> right_part;
+		if (fscanf(input, "%c", &left_part) == EOF) return -1; //there is no more rules: end of file is reached
+		while (left_part == '\n' || left_part == ' ') { //ignoring whitespace characters
+			if (fscanf(input, "%c", &left_part) == EOF) return -1; // there is no more rules: end of file is reached
+		}
+		if (addNonTerminal(left_part) == 1) nonterminals.push_back(left_part); // adding nonterminal
+		fscanf(input, "%c", &right_part_symbol);
+		while (right_part_symbol == '\n' || right_part_symbol == ' ') { // ignoring whitespace characters
+			fscanf(input, "%c", &right_part_symbol);
+		}
+		while (right_part_symbol != ';') { // ';' means current rule is fully read
+			right_part.push_back(right_part_symbol);
+			fscanf(input, "%c", &right_part_symbol);
+			while (right_part_symbol == '\n' || right_part_symbol == ' ') { // ignoring whitespace characters
+				fscanf(input, "%c", &right_part_symbol);
+			}
+		}
+		rules.push_back(make_pair(left_part, right_part)); // adding current rule to vector "rules" 
+		return 0;
+	}
+
 	void ReadGrammar(string path){} //reading of the grammar
 public:
 	LexAnalyser(string path){} //constructor takes the path to the file containing grammar and supposedly calls the method to read it
