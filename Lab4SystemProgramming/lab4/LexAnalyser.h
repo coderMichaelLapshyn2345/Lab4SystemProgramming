@@ -42,27 +42,42 @@ private:
 		vector<char> right_part;
 		if (fscanf(input, "%c", &left_part) == EOF) return -1; //there is no more rules: end of file is reached
 		while (left_part == '\n' || left_part == ' ') { //ignoring whitespace characters
-			if (fscanf(input, "%c", &left_part) == EOF) return -1; // there is no more rules: end of file is reached
+			if (fscanf(input, "%c", &left_part) == EOF) return -1; //there is no more rules: end of file is reached
 		}
-		if (addNonTerminal(left_part) == 1) nonterminals.push_back(left_part); // adding nonterminal
+		if (addNonTerminal(left_part) == 1) nonterminals.push_back(left_part); //adding nonterminal
 		fscanf(input, "%c", &right_part_symbol);
-		while (right_part_symbol == '\n' || right_part_symbol == ' ') { // ignoring whitespace characters
+		while (right_part_symbol == '\n' || right_part_symbol == ' ') { //ignoring whitespace characters
 			fscanf(input, "%c", &right_part_symbol);
 		}
-		while (right_part_symbol != ';') { // ';' means current rule is fully read
+		while (right_part_symbol != ';') { //';' means current rule is fully read
 			right_part.push_back(right_part_symbol);
 			fscanf(input, "%c", &right_part_symbol);
-			while (right_part_symbol == '\n' || right_part_symbol == ' ') { // ignoring whitespace characters
+			while (right_part_symbol == '\n' || right_part_symbol == ' ') { //ignoring whitespace characters
 				fscanf(input, "%c", &right_part_symbol);
 			}
 		}
-		rules.push_back(make_pair(left_part, right_part)); // adding current rule to vector "rules" 
+		rules.push_back(make_pair(left_part, right_part)); //adding current rule to vector "rules" 
 		return 0;
 	}
 
-	void ReadGrammar(string path){} //reading of the grammar
+	void ReadGrammar(string path){ //reading of the grammar
+		FILE *input;
+		input = fopen(path.c_str(), "r");
+		int checker = getRule(input);
+		while (checker != -1) { //reading rule by rule from file while it's end is not reached
+			checker = getRule(input);
+		}
+		//recording terminal alphabet
+		for (int ruleIndex = 0; ruleIndex < rules.size(); ruleIndex++) { //iterating over rules
+			for (int symbolIndex = 0; symbolIndex < (rules[ruleIndex].second).size(); symbolIndex++) { //iterating over right part of the rule
+				if (addTerminal((rules[ruleIndex].second)[symbolIndex]) == 1) terminals.push_back((rules[ruleIndex].second)[symbolIndex]);
+			}
+		}
+	}
 public:
-	LexAnalyser(string path){} //constructor takes the path to the file containing grammar and supposedly calls the method to read it
+	LexAnalyser(string path){ //constructor takes the path to the file containing grammar and supposedly calls the method to read it
+		ReadGrammar(path);
+	}
 
 	void FirstK(){}
 	void FollowK(){}
