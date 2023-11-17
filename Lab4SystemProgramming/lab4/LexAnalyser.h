@@ -4,6 +4,7 @@
 #include <string>
 #include <utility>
 #include <list>
+#include <fstream>
 using namespace std;
 
 class LexAnalyser {
@@ -34,7 +35,7 @@ private:
 	        return 1;
 	}
 
-        int getRule(FILE *input) { //adds next rule if it exists, updates "terminals", "nonterminals" and "rules"
+        int getRule(FILE* input) { //adds next rule if it exists, updates "terminals", "nonterminals" and "rules"
                 /*Assuming rule has the following format: first symbol (non-terminal) - left part,
                 next symbols - right part. Rule is ended by ';'. If rule consists of first symbol
                 and ';' and only, it will be interpreted as epsilon-rule*/
@@ -78,15 +79,152 @@ public:
 	LexAnalyser(string path){ //constructor takes the path to the file containing grammar and supposedly calls the method to read it
 		ReadGrammar(path);
 	}
-
-	void FirstK(){}
-	void FollowK(){}
+    bool IsTerminal(char symbol){
+        if(find(terminals.begin(), terminals.end(), symbol) != terminals.end()){
+            return true;
+        }
+        return false;
+    }
+    bool IsNonTerminal(char symbol){
+        if(find(nonterminals.begin(), nonterminals.end(), symbol) != nonterminals.end()){
+            return true;
+        }
+        return false;
+    }
+    
+    // Function to get First_k set
+	vector<pair<char, vector<char>>> FirstK(char symbol, int k){
+        LexAnalyser lexAnalyzer("grammar.txt");
+        // When non-terminal is present in the grammar rules
+        // through checking the vector of non-terminals
+//        if(find(nonterminals.begin(), nonterminals.end(), nonTerminal) != nonterminals.end()){
+//            vector<char> rightPart;
+//            string rpartToString;
+//            for(const auto& pair: rules){
+//                if(pair.first == nonTerminal){
+//                    rightPart = pair.second;
+//                    rpartToString = string(rightPart.begin(), rightPart.end());
+//                }
+//            }
+//            // Got the rules for instance for A -> abbab | epsilon
+//            // from previous loop
+//            // Now we need to get a string "abbab"
+//            int indexOfDelim = (int)rpartToString.rfind("|");
+//            vector<char> beforeDelim;
+//            vector<char> afterDelim;
+//            for(int i = 0; i < indexOfDelim; i++){
+//                beforeDelim[i] = rpartToString[i];
+//            }
+//            for(int i = indexOfDelim; i < rpartToString.size(); i++){
+//                afterDelim[i] = rpartToString[i];
+//            }
+//            // Got two separated strings
+//            string before = string(beforeDelim.begin(), beforeDelim.end());
+//            string after = string(afterDelim.begin(), afterDelim.end());
+//            if(k > indexOfDelim){
+//                for(int i = 0; i <= k; i++){
+//                    terminals.push_back(before[i]);
+//                    firstKVec.push_back(make_pair(nonTerminal, terminals));
+//                }
+//                for(int i = indexOfDelim + 1; i < after.length(); i++){
+//                    for(int j = i; j <= k; j++){
+//                        terminals.push_back(after[j]);
+//                        firstKVec.push_back(make_pair(nonTerminal, terminals));
+//                    }
+//                }
+//            }
+//            else {
+//                for(int i = 0; i <= k; i++){
+//                    terminals.push_back(before[i]);
+//                    firstKVec.push_back(make_pair(nonTerminal, terminals));
+//                }
+//            }
+//        }
+//        return this->firstKVec;
+        vector<char> rightPart;
+        vector<char> result;
+        string toString;
+        int pos;
+        for(const auto& p: rules){
+            if(IsNonTerminal(p.first)){
+                rightPart = p.second;
+                toString = string(rightPart.begin(), rightPart.end());
+                pos = (int)toString.rfind(p.first);
+                if(pos != string::npos){
+                    rightPart.erase(rightPart.begin() + pos);
+                    rightPart.insert(rightPart.begin() + pos, p.second.begin(), p.second.end());
+                }
+                int indexOfDelimiter = (int)toString.find("|");
+                string beforeDelimiter, afterDelimiter;
+                if(k > indexOfDelimiter){
+                    for(int i = 0; i < indexOfDelimiter; i++){
+                        beforeDelimiter[i] = toString[i];
+                        for(int j = i + 2; j < toString.length(); j++){
+                            afterDelimiter[j] = toString[j];
+                        }
+                    }
+                    for(int i = 0; i < indexOfDelimiter; i++){
+                        result.push_back(beforeDelimiter[i]);
+                    }
+                    for(int j = indexOfDelimiter + 1; j <= k; j++){
+                        result.push_back(afterDelimiter[j]);
+                    }
+                    firstKVec.push_back(make_pair(symbol, result));
+                 }
+                else if(k < indexOfDelimiter){
+                    for(int i = 0; i <= k; i++){
+                        result.push_back(toString[i]);
+                    }
+                    firstKVec.push_back(make_pair(symbol, result));
+                }
+            }
+            else if(IsTerminal(symbol)){
+                toString = string(rightPart.begin(), rightPart.end());
+                string before, after;
+                int pos = 0;
+                int index = (int)toString.find("|");
+                if(k > index && k < toString.length()){
+                    for(int i = 0; i < index; i++){
+                        before[i] = toString[i];
+                    }
+                    for(int j = index + 1; j < toString.length(); j++){
+                        after[pos] = toString[j];
+                        pos++;
+                    }
+                    for(int i = 0; i < index; i++){
+                        result.push_back(before[i]);
+                    }
+                    for(int j = index + 1; j <= k; j++){
+                        result.push_back(after[j]);
+                    }
+                    firstKVec.push_back(make_pair(symbol, result));
+                }
+                else if(k < index){
+                    for(int i = 0; i <= k; i++){
+                        result.push_back(toString[i]);
+                    }
+                    firstKVec.push_back(make_pair(symbol, result));
+                }
+            }
+        }
+        
+        return this->firstKVec;
+    }
+	void FollowK(){
+        
+    }
 	
-	void Epsilons(){}//potentially necessary function for locating epsilon-nonterminals
+	void Epsilons(){
+        
+    }//potentially necessary function for locating epsilon-nonterminals
 
-	void Table(){}//table creation
+	void Table(){
+        
+    }//table creation
 
-	void Analysis(string input){} //analysis of the input string
+	void Analysis(string input){
+        
+    } //analysis of the input string
 
 
 };
