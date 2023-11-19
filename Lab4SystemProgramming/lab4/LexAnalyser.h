@@ -5,6 +5,8 @@
 #include <utility>
 #include <list>
 #include <fstream>
+#include <map>
+#include <set>
 using namespace std;
 
 class LexAnalyser {
@@ -91,125 +93,165 @@ public:
         }
         return false;
     }
-    
-    // Function to get First_k set
-	vector<pair<char, vector<char>>> FirstK(char symbol, int k){
-        LexAnalyser lexAnalyzer("grammar.txt");
-        // When non-terminal is present in the grammar rules
-        // through checking the vector of non-terminals
-//        if(find(nonterminals.begin(), nonterminals.end(), nonTerminal) != nonterminals.end()){
-//            vector<char> rightPart;
-//            string rpartToString;
-//            for(const auto& pair: rules){
-//                if(pair.first == nonTerminal){
-//                    rightPart = pair.second;
-//                    rpartToString = string(rightPart.begin(), rightPart.end());
-//                }
-//            }
-//            // Got the rules for instance for A -> abbab | epsilon
-//            // from previous loop
-//            // Now we need to get a string "abbab"
-//            int indexOfDelim = (int)rpartToString.rfind("|");
-//            vector<char> beforeDelim;
-//            vector<char> afterDelim;
-//            for(int i = 0; i < indexOfDelim; i++){
-//                beforeDelim[i] = rpartToString[i];
-//            }
-//            for(int i = indexOfDelim; i < rpartToString.size(); i++){
-//                afterDelim[i] = rpartToString[i];
-//            }
-//            // Got two separated strings
-//            string before = string(beforeDelim.begin(), beforeDelim.end());
-//            string after = string(afterDelim.begin(), afterDelim.end());
-//            if(k > indexOfDelim){
-//                for(int i = 0; i <= k; i++){
-//                    terminals.push_back(before[i]);
-//                    firstKVec.push_back(make_pair(nonTerminal, terminals));
-//                }
-//                for(int i = indexOfDelim + 1; i < after.length(); i++){
-//                    for(int j = i; j <= k; j++){
-//                        terminals.push_back(after[j]);
-//                        firstKVec.push_back(make_pair(nonTerminal, terminals));
-//                    }
-//                }
-//            }
-//            else {
-//                for(int i = 0; i <= k; i++){
-//                    terminals.push_back(before[i]);
-//                    firstKVec.push_back(make_pair(nonTerminal, terminals));
-//                }
-//            }
-//        }
-//        return this->firstKVec;
-        vector<char> rightPart;
-        vector<char> result;
-        string toString;
-        int pos;
-        for(const auto& p: rules){
-            if(IsNonTerminal(p.first)){
-                rightPart = p.second;
-                toString = string(rightPart.begin(), rightPart.end());
-                pos = (int)toString.rfind(p.first);
-                if(pos != string::npos){
-                    rightPart.erase(rightPart.begin() + pos);
-                    rightPart.insert(rightPart.begin() + pos, p.second.begin(), p.second.end());
-                }
-                int indexOfDelimiter = (int)toString.find("|");
-                string beforeDelimiter, afterDelimiter;
-                if(k > indexOfDelimiter){
-                    for(int i = 0; i < indexOfDelimiter; i++){
-                        beforeDelimiter[i] = toString[i];
-                        for(int j = i + 2; j < toString.length(); j++){
-                            afterDelimiter[j] = toString[j];
-                        }
-                    }
-                    for(int i = 0; i < indexOfDelimiter; i++){
-                        result.push_back(beforeDelimiter[i]);
-                    }
-                    for(int j = indexOfDelimiter + 1; j <= k; j++){
-                        result.push_back(afterDelimiter[j]);
-                    }
-                    firstKVec.push_back(make_pair(symbol, result));
-                 }
-                else if(k < indexOfDelimiter){
-                    for(int i = 0; i <= k; i++){
-                        result.push_back(toString[i]);
-                    }
-                    firstKVec.push_back(make_pair(symbol, result));
-                }
-            }
-            else if(IsTerminal(symbol)){
-                toString = string(rightPart.begin(), rightPart.end());
-                string before, after;
-                int pos = 0;
-                int index = (int)toString.find("|");
-                if(k > index && k < toString.length()){
-                    for(int i = 0; i < index; i++){
-                        before[i] = toString[i];
-                    }
-                    for(int j = index + 1; j < toString.length(); j++){
-                        after[pos] = toString[j];
-                        pos++;
-                    }
-                    for(int i = 0; i < index; i++){
-                        result.push_back(before[i]);
-                    }
-                    for(int j = index + 1; j <= k; j++){
-                        result.push_back(after[j]);
-                    }
-                    firstKVec.push_back(make_pair(symbol, result));
-                }
-                else if(k < index){
-                    for(int i = 0; i <= k; i++){
-                        result.push_back(toString[i]);
-                    }
-                    firstKVec.push_back(make_pair(symbol, result));
+    vector<string> combineAllWords(vector<string> first, vector<char> second)
+    {
+        vector<string> result;
+        for (auto const& st1 : first)
+        {
+            for (auto const& ch2 : second)
+            {
+                string secondS(1, ch2);
+                string newWord = st1 + secondS;
+                if (find(result.begin(), result.end(), newWord) == result.end())
+                {
+                    result.push_back(newWord);
                 }
             }
         }
-        
-        return this->firstKVec;
+        return result;
     }
+    char getFirstNotEmptyChar(string word)
+    {
+        for (int i = 0; i < word.size(); i++)
+        {
+            if (word[i] != 'e') return word[i];
+        }
+        return 'e';
+    }
+    vector<string> GetAllFirstCharactersOfWords(vector<string> words)
+    {
+        vector<string> result;
+        for (auto const& w : words)
+        {
+            char firstChar = getFirstNotEmptyChar(w);
+            string firstChatStr = string(1, firstChar);
+            if (find(result.begin(), result.end(), firstChatStr) != result.end()) continue;
+            result.push_back(firstChatStr);
+        }
+        return result;
+    }
+    
+    // Function to get First_k set
+    vector<pair<char, vector<char>>> First_k(vector<pair<char, vector<char>>> rules){
+        map<string, vector<string>> result;
+            for (auto const& currentTransition : rules) //adding first step terminals to the result
+            {
+                vector<string> terminals;
+                for (auto const& transition : rules)
+                {
+                    if (transition.first != currentTransition.first) continue;
+                    if (IsNonTerminal(transition.second[0]))
+                    {
+                        string terminal(1, transition.second[0]);
+                        if (find(terminals.begin(), terminals.end(), terminal) == terminals.end())
+                        {
+                            terminals.push_back(terminal);
+                        }
+                    }
+                }
+                result[string(1,currentTransition.first)] = terminals;
+            }
+
+            bool isNotChanged = false;//flag that detects if previous step is equal to the current
+            while (!isNotChanged)
+            {
+                for (auto & currentNonTerminalFirstK : result)
+                {
+                    string currentNonTerminal = currentNonTerminalFirstK.first;
+
+                    vector<string> previousStepTerminals = currentNonTerminalFirstK.second;
+                    for (auto const& transition : rules)
+                                {
+                                    if (transition.first == currentNonTerminal[0])
+                                    {
+                                        vector<string> previousNonTerminalFirstK = result[string(1, transition.second[0])];
+                                        vector<string> combinedWords = previousNonTerminalFirstK;
+
+                                        if (IsNonTerminal(transition.second[0]))
+                                        {
+                                            if (previousStepTerminals == currentNonTerminalFirstK.second)
+                                            {
+                                                isNotChanged = true;
+                                            }
+                                            continue;
+                                        }
+
+                                        if (combinedWords.empty())
+                                        {
+                                            if (previousStepTerminals == currentNonTerminalFirstK.second)
+                                            {
+                                                isNotChanged = true;
+                                            }
+                                            continue;
+                                        }
+                                        for (int i = 1; i < transition.second.size(); i++)
+                                        {
+                                            if (combinedWords.empty()) continue;
+                                            if (IsNonTerminal(transition.second[i]))
+                                            {
+                                                vector<string> temp = result[string(1, transition.second[i])];
+                                                if (temp.empty())
+                                                {
+                                                    continue;
+                                                    combinedWords.clear();
+                                                }
+                                                vector<char> chars;
+                                                for(const auto& str: temp){
+                                                    for(char ch: str){
+                                                        chars.push_back(ch);
+                                                    }
+                                                }
+                                                
+                                                combinedWords = combineAllWords(combinedWords, chars);
+                                            }
+                                            else
+                                            {
+                                                                           
+                                                combinedWords = combineAllWords(combinedWords, transition.second);
+                                            }
+                                        }
+                                        vector<string> firstChars = GetAllFirstCharactersOfWords(combinedWords);
+                                        for (auto const& fc : firstChars)
+                                        {
+                                            if (find(currentNonTerminalFirstK.second.begin(), currentNonTerminalFirstK.second.end(), fc) == currentNonTerminalFirstK.second.end())
+                                            {
+                                                currentNonTerminalFirstK.second.push_back(fc);
+                                            }
+                                        }
+
+                                        if (previousStepTerminals != currentNonTerminalFirstK.second)
+                                        {
+                                            isNotChanged = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    map<string, vector<string>> result2;
+                    for (auto& element : result)
+                    {
+                        if (IsNonTerminal(element.first[0]))
+                        {
+                            result2[element.first] = element.second;
+                        }
+                    }
+                    for(const auto& e: result2){
+                        vector<char> tmp;
+                        for(const auto& str: e.second){
+                            for(char c: str){
+                                tmp.push_back(c);
+                            }
+                        }
+                        firstKVec.push_back(make_pair(e.first[0], tmp));
+                    }
+    
+            return this->firstKVec;
+    }
+    
+    
+    
+    
+    
 	void FollowK(){
         
     }
