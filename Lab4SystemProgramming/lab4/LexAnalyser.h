@@ -6,7 +6,7 @@
 #include <list>
 #include <fstream>
 #include <map>
-#include <set>
+#include <algorithm>
 using namespace std;
 
 class LexAnalyser {
@@ -16,9 +16,9 @@ private:
 	vector<pair<char, vector<char>>> rules = {}; /*In my concept the rules are stored as pairs of nonterminal
 	(left part of the rule) and vector of lexems (right part)*/
 
-	vector<char>epsilonNonTerm = {};
-	vector<pair<char, vector<char>>> firstKVec = {};
-	vector<pair<char, vector<char>>> followKVec = {}; /*these arrays are stored in the same way as the rules*/
+	vector<string>epsilonNonTerm = {};
+	map<string, vector<string>> firstKMap = {};
+	map<string, vector<string>> followKMap = {}; /*these arrays are stored in the same way as the rules*/
 	
 	//there should be some attributes for the syntax table
 
@@ -93,6 +93,37 @@ public:
         }
         return false;
     }
+    vector<string> combineAllWords(vector<string> first, vector<string> second)
+    {
+        vector<string> result;
+        for (auto const& s1 : first)
+        {
+            for (auto const& s2 : second)
+            {
+                string newWord = s1 + s2;
+                if (find(result.begin(), result.end(), newWord) == result.end())
+                {
+                    result.push_back(newWord);
+                }
+            }
+        }
+        return result;
+    }
+   
+    vector<string> combineAllWords(vector<string> first, char second)
+    {
+        vector<string> result;
+        for (auto const& st1 : first)
+        {
+            string secondS(1, second);
+            string newWord = st1 + secondS;
+            if (find(result.begin(), result.end(), newWord) == result.end())
+            {
+                result.push_back(newWord);
+            }
+        }
+        return result;
+    }
     vector<string> combineAllWords(vector<string> first, vector<char> second)
     {
         vector<string> result;
@@ -132,133 +163,172 @@ public:
     }
     
     // Function to get First_k set
-    vector<pair<char, vector<char>>> First_k(vector<pair<char, vector<char>>> rules){
-        map<string, vector<string>> result;
-            for (auto const& currentTransition : rules) //adding first step terminals to the result
-            {
-                vector<string> terminals;
-                for (auto const& transition : rules)
-                {
-                    if (transition.first != currentTransition.first) continue;
-                    if (IsNonTerminal(transition.second[0]))
-                    {
-                        string terminal(1, transition.second[0]);
-                        if (find(terminals.begin(), terminals.end(), terminal) == terminals.end())
-                        {
-                            terminals.push_back(terminal);
+    map<string, vector<string>> FirstK(){
+        for(const auto& currentRule: rules){
+            vector<string> terminals;
+            for(const auto& rule: rules){
+                if(rule.first != currentRule.first) continue;
+                if(IsNonTerminal(rule.second[0])){
+                    string terminal(1, rule.second[0]);
+                    if(find(terminals.begin(), terminals.end(), terminal) == terminals.end()){
+                        terminals.push_back(terminal);
+                    }
+                }
+            }
+            firstKMap[string(1, currentRule.first)] = terminals;
+        }
+        bool isNotChanged = false;
+        while(!isNotChanged){
+            for(auto& currentNonTerminalFirstK: firstKMap){
+                string currentNonTerminal = currentNonTerminalFirstK.first;
+                vector<string> previousStepTerminals = currentNonTerminalFirstK.second;
+                for(const auto& rule: rules){
+                    if(string(1, rule.first) == currentNonTerminal){
+                        vector<string> previousNonTerminalFirstK = firstKMap[string(1, rule.second[0])];
+                        vector<string> combinedWords = previousNonTerminalFirstK;
+                        
+                        if(IsNonTerminal(rule.second[0])){
+                            if(previousStepTerminals == currentNonTerminalFirstK.second){
+                                isNotChanged = true;
+                            }
+                            continue;
+                        }
+                        if(combinedWords.empty()){
+                            if(previousStepTerminals == currentNonTerminalFirstK.second){
+                                isNotChanged = true;
+                            }
+                            continue;
+                        }
+                        for(int i = 0; i < rule.second.size(); ++i){
+                            if(combinedWords.empty()) continue;
+                            if(IsNonTerminal(rule.second[i])){
+                                vector<string> tmp = firstKMap[string(1, rule.second[i])];
+                                if(tmp.empty())
+                                {
+                                    continue;
+                                    combinedWords.clear();
+                                }
+                                combinedWords = combineAllWords(combinedWords, tmp);
+                            }
+                            else
+                            {
+                                combinedWords = combineAllWords(combinedWords, rule.second[i]);
+                            }
+                        }
+                        vector<string> firstChars = GetAllFirstCharactersOfWords(combinedWords);
+                        for(const auto& fc: firstChars){
+                            if(find(currentNonTerminalFirstK.second.begin(), currentNonTerminalFirstK.second.end(), fc) == currentNonTerminalFirstK.second.end()){
+                                currentNonTerminalFirstK.second.push_back(fc);
+                            }
+                        }
+                        if(previousStepTerminals != currentNonTerminalFirstK.second){
+                            isNotChanged = true;
                         }
                     }
                 }
-                result[string(1,currentTransition.first)] = terminals;
             }
-
-            bool isNotChanged = false;//flag that detects if previous step is equal to the current
-            while (!isNotChanged)
-            {
-                for (auto & currentNonTerminalFirstK : result)
-                {
-                    string currentNonTerminal = currentNonTerminalFirstK.first;
-
-                    vector<string> previousStepTerminals = currentNonTerminalFirstK.second;
-                    for (auto const& transition : rules)
-                                {
-                                    if (transition.first == currentNonTerminal[0])
-                                    {
-                                        vector<string> previousNonTerminalFirstK = result[string(1, transition.second[0])];
-                                        vector<string> combinedWords = previousNonTerminalFirstK;
-
-                                        if (IsNonTerminal(transition.second[0]))
-                                        {
-                                            if (previousStepTerminals == currentNonTerminalFirstK.second)
-                                            {
-                                                isNotChanged = true;
-                                            }
-                                            continue;
-                                        }
-
-                                        if (combinedWords.empty())
-                                        {
-                                            if (previousStepTerminals == currentNonTerminalFirstK.second)
-                                            {
-                                                isNotChanged = true;
-                                            }
-                                            continue;
-                                        }
-                                        for (int i = 1; i < transition.second.size(); i++)
-                                        {
-                                            if (combinedWords.empty()) continue;
-                                            if (IsNonTerminal(transition.second[i]))
-                                            {
-                                                vector<string> temp = result[string(1, transition.second[i])];
-                                                if (temp.empty())
-                                                {
-                                                    continue;
-                                                    combinedWords.clear();
-                                                }
-                                                vector<char> chars;
-                                                for(const auto& str: temp){
-                                                    for(char ch: str){
-                                                        chars.push_back(ch);
-                                                    }
-                                                }
-                                                
-                                                combinedWords = combineAllWords(combinedWords, chars);
-                                            }
-                                            else
-                                            {
-                                                                           
-                                                combinedWords = combineAllWords(combinedWords, transition.second);
-                                            }
-                                        }
-                                        vector<string> firstChars = GetAllFirstCharactersOfWords(combinedWords);
-                                        for (auto const& fc : firstChars)
-                                        {
-                                            if (find(currentNonTerminalFirstK.second.begin(), currentNonTerminalFirstK.second.end(), fc) == currentNonTerminalFirstK.second.end())
-                                            {
-                                                currentNonTerminalFirstK.second.push_back(fc);
-                                            }
-                                        }
-
-                                        if (previousStepTerminals != currentNonTerminalFirstK.second)
-                                        {
-                                            isNotChanged = true;
-                                        }
-                                    }
+        }
+        return this->firstKMap;
+    }
+    
+    
+    
+    // Function to detect Follow_1 set
+	map<string, vector<string>> FollowK(map<string, vector<string>> firstK, vector<string> epsilon){
+        for(int i = 0; i < rules.size(); ++i){
+            string left_non_terminal = string(1, rules[i].first);
+            vector <string> follow;
+            if(left_non_terminal == "S"){
+                follow.push_back("e");
+            }
+            for(int j = 0; j < rules.size(); ++j){
+                int at = -1;
+                auto it = find(rules[j].second.begin(), rules[j].second.end(), left_non_terminal);
+                if(it != rules[j].second.end()){
+                    at = (int)distance(rules[j].second.begin(), it);
+                }
+                if(at == rules[j].second.size() - 1){
+                    string symbol = "";
+                    symbol += rules[j].second[at];
+                    if(string(1, rules[j].first) == symbol){
+                        continue;
+                    }
+                    else {
+                        vector<string> followLeft = followKMap[string(1, rules[j].first)];
+                        for(int k = 0; k < followLeft.size(); ++k){
+                            follow.push_back(followLeft[k]);
+                        }
+                    }
+                }
+                else {
+                    int eps = 0;
+                    for(int p = at + 1; p < rules[j].second.size(); ++p){
+                        if(IsNonTerminal(rules[j].second[p])){
+                            string symbol = "";
+                            symbol += rules[j].second[p];
+                            follow.push_back(symbol);
+                            break;
+                        }
+                        else {
+                            string symbol = "";
+                            symbol += rules[j].second[p];
+                            int count = 0;
+                            for(const auto& str: epsilonNonTerm){
+                                if(str.find(symbol) != string::npos){
+                                    count++;
                                 }
                             }
-                        }
-                    map<string, vector<string>> result2;
-                    for (auto& element : result)
-                    {
-                        if (IsNonTerminal(element.first[0]))
-                        {
-                            result2[element.first] = element.second;
-                        }
-                    }
-                    for(const auto& e: result2){
-                        vector<char> tmp;
-                        for(const auto& str: e.second){
-                            for(char c: str){
-                                tmp.push_back(c);
+                            vector<string> first = firstK[symbol];
+                            for(int k = 0; k < first.size(); ++k){
+                                follow.push_back(first[k]);
                             }
                         }
-                        firstKVec.push_back(make_pair(e.first[0], tmp));
                     }
-    
-            return this->firstKVec;
-    }
-    
-    
-    
-    
-    
-	void FollowK(){
+                    if(eps == rules[j].second.size() - at + 1){
+                        vector<string> followLeft = followKMap[string(1, rules[j].first)];
+                        for(int k = 0; k < followLeft.size(); ++k){
+                            follow.push_back(followLeft[k]);
+                        }
+                    }
+                }
+                
+            }
+            vector<string> followSet;
+            for(int l = 0; l < follow.size(); ++l){
+                followSet.push_back(follow[l]);
+                
+            }
+            vector<string> helper(followSet.begin(), followSet.end());
+            followKMap[left_non_terminal] = helper;
+        }
         
+        return this->followKMap;
     }
 	
-	void Epsilons(){
-        
-    }//potentially necessary function for locating epsilon-nonterminals
+	vector<string> Epsilons(){
+        for(int i = 0; i < rules.size(); i++){
+            if(rules[i].second[i] == 'e'){
+                epsilonNonTerm.push_back(string(1, rules[i].first));
+            }
+        }
+        for(int i = 0; i < rules.size(); ++i){
+            int count = 0;
+            vector<char> end = rules[i].second;
+            for(int j = 0; j < end.size(); ++j){
+                string ch = "";
+                ch += end[j];
+                for(const auto& str: epsilonNonTerm){
+                    if(str.find(ch) != string::npos){
+                        count++;
+                    }
+                }
+            }
+            if(count == rules[i].second.size()){
+                epsilonNonTerm.push_back(string(1, rules[i].first));
+            }
+        }
+        return this->epsilonNonTerm;
+    }
 
 	void Table(){
         
