@@ -330,13 +330,133 @@ public:
         return this->epsilonNonTerm;
     }
 
-	void Table(){
-        
-    }//table creation
+	        void Table()
+        {
+            
 
-	void Analysis(string input){
+            for (auto & rule : rules)
+            {
+                
+                string start = "";
+                start += rule.first;
+                vector<string> end = {};
+                string r0 = "";
+                for (char r : rule.second) {
+                    end.push_back(r0 += r); r0 = "";}
+
+                // Визначаємо FIRST для end
+                vector<string> firstSet;
+
+                for (int i = 0; i < end.size(); ++i)
+                {
+                    char currentChar = end[i][0];
+                    if (IsNonTerminal(currentChar))
+                    {
+                        vector<string> firstOfNonTerminal = firstKMap[string(1,currentChar)];
+                        firstSet.insert(firstSet.end(), firstOfNonTerminal.begin(), firstOfNonTerminal.end());
+
+                        // Якщо epsilon не є в FIRST[nonTerminal], перериваємо цикл
+                        if (find(firstOfNonTerminal.begin(), firstOfNonTerminal.end(), "e") == firstOfNonTerminal.end())
+                            break;
+                    }
+                    else
+                    {
+                        char currentTerminal=currentChar;
+                        firstSet.push_back(string(1,currentTerminal));
+                        break;
+                    }
+                }
+                int ruleNum;
+                // Додаємо FIRST до таблиці
+                for (string& terminal : firstSet)
+                {
+                    if (terminal != "e"){ // Якщо epsilon не є в FIRST, додаємо запис в таблицю
+                        for (int j = 0; j < rules.size(); j++) if (string(1, rules[j].first) == start) ruleNum = j;
+                    parsingTable[{start, terminal}] = ruleNum;
+                }
+                    else
+                    {
+                        // Якщо epsilon є в FIRST, додаємо FOLLOW[start] до таблиці
+                        vector<string> followSet = followKMap[start];
+                        
+                        for (string& followTerminal : followSet)
+                        {
+                            for (int j = 0; j < rules.size(); j++) if (string(1, rules[j].first) == start) ruleNum = j;
+                            parsingTable[{start, followTerminal}] = ruleNum;
+                        }
+                    }
+                }
+            }
         
-    } //analysis of the input string
+}//table creation
+
+void Analysis(string input){
+    stack<string> parseStack;
+    parseStack.push("$");  // Bottom of the stack
+    parseStack.push("S");  // Starting symbol
+
+    size_t inputIndex = 0;
+    while (!parseStack.empty())
+    {
+
+        // Get the top of the stack and the current input symbol
+        string stackTop = parseStack.top();
+        string currentInput = (inputIndex < input.size()) ? string(1, input[inputIndex]) : "";
+
+        // Check if the stack top is a non-terminal
+        if (IsNonTerminal(stackTop[0]))
+        {
+            // Look up the production in the parsing table
+            auto it = parsingTable.find({ stackTop, currentInput });
+            if (it != parsingTable.end())
+            {
+                string production = it->second;
+
+                // Pop the non-terminal from the stack
+                parseStack.pop();
+
+                // Push the production onto the stack in reverse order
+                for (int i = production.size() - 1; i >= 0; --i)
+                {
+                    if (production[i] != 'e')  // Skip epsilon
+                        parseStack.push(string(1, production[i]));
+                }
+
+            }
+            else
+            {
+                // Error handling: no production in the parsing table
+                cout << "Error: No production for " << stackTop << " and input " << currentInput;
+                break;
+            }
+        }
+        else if (stackTop == currentInput)  // Check if the stack top matches the current input symbol
+        {
+            // Matched terminal, pop from stack and move to the next input symbol
+            parseStack.pop();
+            ++inputIndex;
+        }
+        else if (stackTop == "$" && currentInput.length() == 0) {
+            cout << "Parsing ended successfully";
+            break;
+        }
+        else
+        {
+            // Error handling: stack top and input do not match
+            cout << "Error: Mismatch between stack top " << stackTop << " and input " << currentInput;
+            break;
+        }
+
+        cout << endl;
+    }
+
+    cout << endl;
+
+    if (inputIndex == input.size() && !parseStack.empty() && parseStack.top() == "$" && parseStack.top().length() == 1)
+        cout << "Parsing successful!" << endl;
+    else
+        cout << "Parsing failed!" << endl;
+} //analysis of the input string
 
 
 };
